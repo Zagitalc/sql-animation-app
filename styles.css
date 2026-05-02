@@ -150,9 +150,39 @@ textarea, input { font-family: inherit; }
 
 .workspace {
   display: grid;
-  grid-template-columns: 260px 1fr 360px;
+  grid-template-columns:
+    var(--col-schema-w, 260px)
+    6px
+    minmax(0, 1fr)
+    6px
+    var(--col-results-w, 360px);
   height: 100%;
   min-height: 0;
+}
+
+.col-resizer {
+  position: relative;
+  cursor: col-resize;
+  background: var(--line);
+  opacity: 0.4;
+  transition: opacity 120ms ease, background 120ms ease;
+  user-select: none;
+  touch-action: none;
+}
+.col-resizer::after {
+  content: "";
+  position: absolute;
+  inset: 0 -3px;
+}
+.col-resizer:hover,
+.col-resizer.is-dragging {
+  opacity: 1;
+  background: var(--accent, var(--ink-3));
+}
+body.is-resizing,
+body.is-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
 }
 
 .col {
@@ -896,6 +926,20 @@ textarea, input { font-family: inherit; }
 
 /* small screens */
 @media (max-width: 1100px) {
-  .workspace { grid-template-columns: 220px 1fr 320px; }
+  .workspace {
+    grid-template-columns:
+      var(--col-schema-w, 220px)
+      6px
+      minmax(0, 1fr)
+      6px
+      var(--col-results-w, 320px);
+  }
   .rail-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+  .col-resizer { display: none; }
 }

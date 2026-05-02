@@ -1,5 +1,90 @@
 // Main app for SQL Simulator
-const { useState: useStateA, useEffect: useEffectA, useMemo: useMemoA } = React;
+const { useState: useStateA, useEffect: useEffectA, useMemo: useMemoA, useRef: useRefA, useCallback: useCallbackA } = React;
+
+const COL_MIN = { schema: 180, results: 220, center: 320 };
+const COL_DEFAULT = { schema: 260, results: 360 };
+const COL_STORAGE_KEY = "sigma.sql:colWidths";
+
+function loadStoredCols() {
+  try {
+    const raw = localStorage.getItem(COL_STORAGE_KEY);
+    if (!raw) return COL_DEFAULT;
+    const parsed = JSON.parse(raw);
+    return {
+      schema: Math.max(COL_MIN.schema, parsed.schema || COL_DEFAULT.schema),
+      results: Math.max(COL_MIN.results, parsed.results || COL_DEFAULT.results),
+    };
+  } catch {
+    return COL_DEFAULT;
+  }
+}
+
+function useColumnResizers() {
+  const workspaceRef = useRefA(null);
+  const [cols, setCols] = useStateA(loadStoredCols);
+  const dragRef = useRefA(null);
+
+  useEffectA(() => {
+    const root = workspaceRef.current;
+    if (!root) return;
+    root.style.setProperty("--col-schema-w", cols.schema + "px");
+    root.style.setProperty("--col-results-w", cols.results + "px");
+    try { localStorage.setItem(COL_STORAGE_KEY, JSON.stringify(cols)); } catch {}
+  }, [cols]);
+
+  const onPointerMove = useCallbackA((e) => {
+    const d = dragRef.current;
+    if (!d) return;
+    const ws = workspaceRef.current;
+    if (!ws) return;
+    const rect = ws.getBoundingClientRect();
+    const dx = e.clientX - d.startX;
+    if (d.side === "schema") {
+      const total = rect.width;
+      const maxW = total - d.otherW - 6 - 6 - COL_MIN.center;
+      const next = Math.max(COL_MIN.schema, Math.min(maxW, d.startW + dx));
+      setCols((c) => ({ ...c, schema: next }));
+    } else {
+      const total = rect.width;
+      const maxW = total - d.otherW - 6 - 6 - COL_MIN.center;
+      const next = Math.max(COL_MIN.results, Math.min(maxW, d.startW - dx));
+      setCols((c) => ({ ...c, results: next }));
+    }
+  }, []);
+
+  const onPointerUp = useCallbackA(() => {
+    const d = dragRef.current;
+    if (!d) return;
+    d.el && d.el.classList.remove("is-dragging");
+    document.body.classList.remove("is-resizing");
+    window.removeEventListener("pointermove", onPointerMove);
+    window.removeEventListener("pointerup", onPointerUp);
+    dragRef.current = null;
+  }, [onPointerMove]);
+
+  function startDrag(side) {
+    return (e) => {
+      e.preventDefault();
+      dragRef.current = {
+        side,
+        startX: e.clientX,
+        startW: side === "schema" ? cols.schema : cols.results,
+        otherW: side === "schema" ? cols.results : cols.schema,
+        el: e.currentTarget,
+      };
+      e.currentTarget.classList.add("is-dragging");
+      document.body.classList.add("is-resizing");
+      window.addEventListener("pointermove", onPointerMove);
+      window.addEventListener("pointerup", onPointerUp);
+    };
+  }
+
+  function resetCol(side) {
+    setCols((c) => ({ ...c, [side]: COL_DEFAULT[side] }));
+  }
+
+  return { workspaceRef, startDrag, resetCol };
+}
 
 const QUICK_EXAMPLES = [
   {
@@ -113,6 +198,7 @@ function App() {
   const [history, setHistory] = useStateA([]);
   const [activeTable, setActiveTable] = useStateA(null);
   const [editorFocusedAt, setEditorFocusedAt] = useStateA(0);
+  const { workspaceRef, startDrag, resetCol } = useColumnResizers();
 
   const lesson = useMemoA(
     () => window.LESSONS.find((l) => l.id === activeLessonId),
@@ -179,7 +265,7 @@ function App() {
   return (
     <div className="app">
       <Topbar ready={ready} onReset={resetDb} />
-      <div className="workspace">
+      <div className="workspace" ref={workspaceRef}>
         {/* Schema */}
         <aside className="col col-schema">
           <window.SchemaViewer
@@ -188,6 +274,16 @@ function App() {
             onInsert={insertAtCursor}
           />
         </aside>
+
+        <div
+          className="col-resizer"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize schema panel"
+          onPointerDown={startDrag("schema")}
+          onDoubleClick={() => resetCol("schema")}
+          title="Drag to resize · double-click to reset"
+        />
 
         {/* Center: lesson rail + editor + stepper */}
         <main className="col col-editor">
@@ -234,6 +330,16 @@ function App() {
             onLoadFinal={loadFinal}
           />
         </main>
+
+        <div
+          className="col-resizer"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize results panel"
+          onPointerDown={startDrag("results")}
+          onDoubleClick={() => resetCol("results")}
+          title="Drag to resize · double-click to reset"
+        />
 
         {/* Results column */}
         <aside className="col col-results">
