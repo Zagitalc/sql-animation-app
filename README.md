@@ -2,6 +2,17 @@
 
 A client-side SQL learning app for exploring a sample retail pricing database. It runs SQLite in the browser with [sql.js](https://sql.js.org/), React, and Babel loaded from CDNs.
 
+The app is intentionally lightweight: there is no build system, package manager, or backend server. A local static server is enough.
+
+## Quick Start
+
+```bash
+cd /Users/longhchung/Documents/GitHub/sql-animation-app
+python3 -m http.server 8000
+```
+
+Open `http://localhost:8000/index.html` in a browser.
+
 ## Run Locally
 
 Serve the project directory with a static file server:
@@ -18,6 +29,8 @@ http://localhost:8000/index.html
 ```
 
 No package install is required.
+
+You can also open `SQL Simulator.html`; it points at the same app shell. `index.html` is the preferred entry point.
 
 ## Requirements
 
@@ -49,9 +62,20 @@ tweaks-panel.jsx        UI tweak controls
 - In-browser SQLite database
 - Editable SQL editor
 - Query results table
-- Guided lessons for SELECT, JOIN, GROUP BY, and CASE
+- Guided lessons for SELECT, joins, outer joins, GROUP BY, CASE, indexes, query plans, and window functions
 - Quick example queries
+- Resizable schema and results columns
 - Theme, density, and accent tweaks
+
+## Lesson Topics
+
+- Selecting and filtering rows
+- Joining product, brand, retailer, and price tables
+- Comparing LEFT, RIGHT, and FULL OUTER JOIN behavior with demo catalog and inventory tables
+- Aggregating rows with GROUP BY
+- Using CASE for calculated labels
+- Creating indexes and inspecting SQLite query plans
+- Ranking rows with window functions such as `ROW_NUMBER()`
 
 ## Troubleshooting
 
