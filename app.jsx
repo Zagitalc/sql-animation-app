@@ -115,6 +115,55 @@ GROUP BY r.name
 ORDER BY avg_price DESC;`,
   },
   {
+    name: "Index + query plan",
+    sql: `CREATE INDEX IF NOT EXISTS idx_price_snapshots_product_date
+ON price_snapshots(retailer_product_id, captured_at);
+
+EXPLAIN QUERY PLAN
+SELECT retailer_product_id, captured_at, shelf_price, promo_price
+FROM price_snapshots
+WHERE retailer_product_id = 1001
+ORDER BY captured_at DESC;`,
+  },
+  {
+    name: "Left outer join",
+    sql: `SELECT
+  c.sku,
+  c.product_name,
+  i.warehouse,
+  i.on_hand
+FROM join_demo_catalog c
+LEFT OUTER JOIN join_demo_inventory i ON c.sku = i.sku
+ORDER BY c.sku;`,
+  },
+  {
+    name: "Right outer join",
+    sql: `SELECT
+  COALESCE(c.sku, i.sku) AS sku,
+  c.product_name,
+  i.warehouse,
+  i.on_hand
+FROM join_demo_catalog c
+RIGHT OUTER JOIN join_demo_inventory i ON c.sku = i.sku
+ORDER BY sku;`,
+  },
+  {
+    name: "Full outer join",
+    sql: `SELECT
+  COALESCE(c.sku, i.sku) AS sku,
+  c.product_name,
+  i.warehouse,
+  i.on_hand,
+  CASE
+    WHEN c.sku IS NULL THEN 'inventory only'
+    WHEN i.sku IS NULL THEN 'catalog only'
+    ELSE 'matched'
+  END AS match_status
+FROM join_demo_catalog c
+FULL OUTER JOIN join_demo_inventory i ON c.sku = i.sku
+ORDER BY match_status, sku;`,
+  },
+  {
     name: "Promotion count by type",
     sql: `SELECT
   COALESCE(promotion_type, 'No promo') AS type,
@@ -163,6 +212,7 @@ function Boot() {
 }
 
 function Topbar({ ready, onReset }) {
+  const tableCount = window.SAMPLE_SCHEMA ? window.SAMPLE_SCHEMA.tables.length : 0;
   return (
     <header className="topbar">
       <div className="brand">
@@ -177,7 +227,7 @@ function Topbar({ ready, onReset }) {
           <span>{ready ? "SQLite WASM ready" : "loading engine"}</span>
         </span>
         <span>·</span>
-        <span>retail demo db · 5 tables</span>
+        <span>retail demo db · {tableCount} tables</span>
         <span>·</span>
         <button className="btn btn-ghost" onClick={onReset} style={{ padding: "4px 8px" }}>
           ↻ Reset DB

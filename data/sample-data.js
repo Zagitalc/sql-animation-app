@@ -1,4 +1,5 @@
 // Sample retail-style dataset: brands, retailers, products, retailer_products, price_snapshots
+// plus a compact outer-join demo pair with deliberately unmatched SKUs.
 window.SAMPLE_SCHEMA = {
   tables: [
     {
@@ -51,6 +52,24 @@ window.SAMPLE_SCHEMA = {
         { name: "promotion_type", type: "TEXT" },
       ],
       rowCount: 36,
+    },
+    {
+      name: "join_demo_catalog",
+      columns: [
+        { name: "sku", type: "TEXT", pk: true },
+        { name: "product_name", type: "TEXT" },
+        { name: "category", type: "TEXT" },
+      ],
+      rowCount: 6,
+    },
+    {
+      name: "join_demo_inventory",
+      columns: [
+        { name: "sku", type: "TEXT", pk: true },
+        { name: "warehouse", type: "TEXT" },
+        { name: "on_hand", type: "INTEGER" },
+      ],
+      rowCount: 6,
     },
   ],
 };
@@ -168,4 +187,33 @@ INSERT INTO price_snapshots VALUES
   (34, 1003, '2026-05-03', 12.50, NULL, NULL),
   (35, 1008, '2026-05-03', 8.50, 6.95, 'Member'),
   (36, 1013, '2026-05-03', 7.75, NULL, NULL);
+
+-- Outer join playground tables
+-- CAT-ONLY-* rows exist only in the catalog.
+-- INV-ONLY-* rows exist only in inventory.
+CREATE TABLE join_demo_catalog (
+  sku TEXT PRIMARY KEY,
+  product_name TEXT NOT NULL,
+  category TEXT
+);
+INSERT INTO join_demo_catalog VALUES
+  ('MATCH-001', 'Sparkling Water 12 Pack', 'Soft Drinks'),
+  ('MATCH-002', 'Salted Crisps Multipack', 'Snacks'),
+  ('MATCH-003', 'Roast Coffee Beans 250g', 'Coffee'),
+  ('MATCH-004', 'Oat Granola 500g', 'Breakfast'),
+  ('CAT-ONLY-101', 'Citrus Soda 24 Cans', 'Soft Drinks'),
+  ('CAT-ONLY-102', 'Olive Oil Extra Virgin', 'Pantry');
+
+CREATE TABLE join_demo_inventory (
+  sku TEXT PRIMARY KEY,
+  warehouse TEXT NOT NULL,
+  on_hand INTEGER NOT NULL
+);
+INSERT INTO join_demo_inventory VALUES
+  ('MATCH-001', 'North DC', 42),
+  ('MATCH-002', 'South DC', 18),
+  ('MATCH-003', 'East DC', 7),
+  ('MATCH-004', 'North DC', 0),
+  ('INV-ONLY-201', 'West DC', 11),
+  ('INV-ONLY-202', 'East DC', 5);
 `;
