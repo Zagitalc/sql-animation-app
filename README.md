@@ -32,6 +32,19 @@ No package install is required.
 
 You can also open `SQL Simulator.html`; it points at the same app shell. `index.html` is the preferred entry point.
 
+## Deploy To Cloudflare Pages
+
+Cloudflare Pages can deploy this repository as a plain static HTML site. Use these settings:
+
+```text
+Framework preset: None
+Build command: leave blank
+Build output directory: .
+Root directory: /
+```
+
+The site must have a top-level `index.html`; this repository keeps that as a real file for compatibility with static hosts and direct uploads.
+
 ## Requirements
 
 - Python 3, for the local static server
